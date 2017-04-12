@@ -320,11 +320,12 @@ function insertSegmentGlyph(glyphs, virtualSegment, nextVirtualSegment, glyphIsL
     const segmentAngle = Math.atan2(virtualSegment.end.y - virtualSegment.anchor.y, virtualSegment.end.x - virtualSegment.anchor.x);
     // If !glyphIsLogicallyForward, we're iterating through the segments in reverse logical order as well, so we need to flip the segment angle
     const glyphAngle = glyphIsLogicallyForward ? segmentAngle : segmentAngle + Math.PI;
-    let nextGlyphAngle = 0;
+    let nextGlyphAngle;
     if (nextVirtualSegment) {
         const nextSegmentAngle = Math.atan2(nextVirtualSegment.end.y - nextVirtualSegment.anchor.y, nextVirtualSegment.end.x - nextVirtualSegment.anchor.x);
         // If !glyphIsLogicallyForward, we're iterating through the segments in reverse logical order as well, so we need to flip the segment angle
         nextGlyphAngle = glyphIsLogicallyForward ? nextSegmentAngle : nextSegmentAngle + Math.PI;
+        nextGlyphAngle = (nextGlyphAngle + 2.0 * Math.PI) % (2.0 * Math.PI);
     }
 
     // Insert a glyph rotated at this angle for display in the range from [scale, previous(larger) scale].
@@ -334,7 +335,7 @@ function insertSegmentGlyph(glyphs, virtualSegment, nextVirtualSegment, glyphIsL
         minScale: virtualSegment.minScale,
         maxScale: virtualSegment.maxScale,
         angle: (glyphAngle + 2.0 * Math.PI) % (2.0 * Math.PI),
-        nextAngle: (nextGlyphAngle + 2.0 * Math.PI) % (2.0 * Math.PI)});
+        nextAngle: nextGlyphAngle});
 }
 
 /**

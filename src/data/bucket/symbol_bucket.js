@@ -691,7 +691,7 @@ class SymbolBucket {
             // Encode angle of glyph
             const glyphAngle = Math.round((symbol.glyphAngle / (Math.PI * 2)) * 10000);
             const anchorAngle = Math.round((symbol.anchorAngle / (Math.PI * 2)) * 10000);
-            const nextGlyphAngle = Math.round((symbol.nextGlyphAngle / (Math.PI * 2)) * 10000);
+            const nextGlyphAngle = symbol.nextGlyphAngle ? Math.round((symbol.nextGlyphAngle / (Math.PI * 2)) * 10000) : 10001;
 
             const segment = arrays.prepareSegment(4);
             const index = segment.vertexLength;

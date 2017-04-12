@@ -65,7 +65,8 @@ float interpolateNextGlyphAngle(const float renderSize,
                                 const float minZoom,
                                 const float maxZoom,
                                 const float currentAngle,
-                                const float nextAngle) {
+                                const float nextAngle,
+                                const bool hasNextGlyph) {
     // We start showing the glyph on the "next" segment (which may be left or right of us)
     // when we hit minZoom. So start interpolating when we're 20% away from that.
     // Better might be to use the extrude scale to figure out how far we are in
@@ -75,7 +76,7 @@ float interpolateNextGlyphAngle(const float renderSize,
     float adjustedZoom = (u_zoom - zoomAdjust) * 10.0;
     float startInterpolationZoom = minZoom + (maxZoom - minZoom) * 0.2;
     float doInterpolation = 1.0 - step(startInterpolationZoom, adjustedZoom);
-    if (nextAngle == 0.0) {
+    if (!hasNextGlyph) {
         // TODO: Determine when we can't do interpolation because there are no more segments
         // And do it without branching!
         doInterpolation = 0.0;
@@ -116,6 +117,7 @@ void main() {
     mediump float a_minzoom = a_zoom[0];
     mediump float a_maxzoom = a_zoom[1];
     mediump float a_anchorangle = a_more_data[0] / 10000.0 * 2.0 * PI;
+    bool a_has_next_glyph = a_more_data[2] <= 10000.0;
     mediump float a_next_glyph_angle = a_more_data[2] / 10000.0 * 2.0 * PI;
 
     // In order to accommodate placing labels around corners in
@@ -145,7 +147,7 @@ void main() {
 
     vec4 projectedPoint = u_matrix * vec4(a_label_pos, 0, 1);
     highp float camera_to_anchor_distance = projectedPoint.w;
-    highp float perspective_ratio = 1.0 + (1.0 - u_pitch_scale)*((camera_to_anchor_distance / u_camera_to_center_distance) - 1.0);;
+    highp float perspective_ratio = 1.0 + (1.0 - u_pitch_scale)*((camera_to_anchor_distance / u_camera_to_center_distance) - 1.0);
 
     v_hidden_glyphs = 0.0;
 
@@ -196,7 +198,8 @@ void main() {
                                                            a_minzoom,
                                                            a_maxzoom,
                                                            a_lineangle,
-                                                           a_next_glyph_angle);
+                                                           a_next_glyph_angle,
+                                                           a_has_next_glyph);
         a = u_matrix * vec4(a_pos, 0, 1);
         b = u_matrix * vec4(a_pos + vec2(cos(next_angle),sin(next_angle)), 0, 1);
         highp float projected_line_angle = atan((b[1]/b[3] - a[1]/a[3])/u_aspect_ratio, b[0]/b[3] - a[0]/a[3]);
