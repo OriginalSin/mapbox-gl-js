@@ -67,31 +67,30 @@ float interpolateNextGlyphAngle(const float renderSize,
                                 const float currentAngle,
                                 const float nextAngle,
                                 const bool hasNextGlyph) {
+
+    if (!hasNextGlyph) {
+        return currentAngle;
+    }
     // We start showing the glyph on the "next" segment (which may be left or right of us)
-    // when we hit minZoom. So start interpolating when we're 20% away from that.
-    // Better might be to use the extrude scale to figure out how far we are in
-    //  tile units from the end of the segment, and do the interpolation based on a fixed distance
-    //  in tile units (so that long line segments don't cause us to interpolate too early)
+    // when we hit minZoom.
+    // Find the zoom that gives us a position X units less than the position we'd have at minZoom
+    // Interpolate between that zoom and minZoom
     float zoomAdjust = log2(renderSize / layoutSize);
     float adjustedZoom = (u_zoom - zoomAdjust) * 10.0;
     float startInterpolationZoom = minZoom + (maxZoom - minZoom) * 0.2;
-    float doInterpolation = 1.0 - step(startInterpolationZoom, adjustedZoom);
-    if (!hasNextGlyph) {
-        // TODO: Determine when we can't do interpolation because there are no more segments
-        // And do it without branching!
-        doInterpolation = 0.0;
-    }
-    highp float interpolatedAngle;
-    if (abs(nextAngle - currentAngle) > PI) {
-        if (nextAngle > currentAngle) {
-            interpolatedAngle = mod(mix(nextAngle, currentAngle + 2.0 * PI, (adjustedZoom - minZoom) / (startInterpolationZoom - minZoom)), 2.0 * PI);
-        } else {
-            interpolatedAngle = mod(mix(nextAngle + 2.0 * PI, currentAngle, (adjustedZoom - minZoom) / (startInterpolationZoom - minZoom)), 2.0 * PI);
-        }
+    if (step(startInterpolationZoom, adjustedZoom) == 1.0) {
+        return currentAngle;
     } else {
-        interpolatedAngle = mix(nextAngle, currentAngle, (adjustedZoom - minZoom) / (startInterpolationZoom - minZoom));
+        if (abs(nextAngle - currentAngle) > PI) {
+            if (nextAngle > currentAngle) {
+                return mod(mix(nextAngle, currentAngle + 2.0 * PI, (adjustedZoom - minZoom) / (startInterpolationZoom - minZoom)), 2.0 * PI);
+            } else {
+                return mod(mix(nextAngle + 2.0 * PI, currentAngle, (adjustedZoom - minZoom) / (startInterpolationZoom - minZoom)), 2.0 * PI);
+            }
+        } else {
+            return mix(nextAngle, currentAngle, (adjustedZoom - minZoom) / (startInterpolationZoom - minZoom));
+        }
     }
-    return doInterpolation * interpolatedAngle + (1.0 - doInterpolation) * currentAngle;
 }
 
 void main() {
@@ -180,8 +179,8 @@ void main() {
     } else if (u_rotate_with_map) {
         // Calculate how vertical the label is in projected space, space out letters according to the angle of
         //  incidence at the point of the label anchor
-        vec4 a = u_matrix * vec4(a_pos, 0, 1);
-        vec4 b = u_matrix * vec4(a_pos + vec2(cos(a_anchorangle),sin(a_anchorangle)), 0, 1);
+        vec4 a = u_matrix * vec4(a_label_pos, 0, 1);
+        vec4 b = u_matrix * vec4(a_label_pos + vec2(cos(a_anchorangle),sin(a_anchorangle)), 0, 1);
         highp float projected_label_angle = atan((b[1]/b[3] - a[1]/a[3])/u_aspect_ratio, b[0]/b[3] - a[0]/a[3]);
         legibility_expansion += abs(sin(projected_label_angle)) * (incidence_stretch - 1.0);
 
